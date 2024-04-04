@@ -1,16 +1,16 @@
 import pandas as pd
 
-def get_data() -> list[pd.DataFrame]:
-    prod_pec = pd.read_csv("./input_data/pecuaria/producao pecuaria.csv",sep=";",skiprows=4)
+def get_data(ano:str) -> list[pd.DataFrame]:
+    prod_pec = pd.read_csv(f"./input_data/pecuaria/producao_pecuaria_{ano}.csv",sep=";",skiprows=4)
     prod_pec = prod_pec.loc[~prod_pec["Leite (Mil litros)"].isna()]
     
-    val_prod_pec = pd.read_csv("./input_data/pecuaria/valor producao pecuaria.csv",sep=";",skiprows=4)
+    val_prod_pec = pd.read_csv(f"./input_data/pecuaria/valor_producao_pecuaria_{ano}.csv",sep=";",skiprows=4)
     val_prod_pec = val_prod_pec.loc[~val_prod_pec["Leite"].isna()]
     
-    prod_aqui = pd.read_csv("./input_data/pecuaria/producao aquicultura.csv",sep=";",skiprows=4)
+    prod_aqui = pd.read_csv(f"./input_data/pecuaria/producao_aquicultura_{ano}.csv",sep=";",skiprows=4)
     prod_aqui = prod_aqui.loc[~prod_aqui["Carpa (Quilogramas)"].isna()]
     
-    val_prod_aqui = pd.read_csv("./input_data/pecuaria/valor producao aquicultura.csv",sep=";",skiprows=4)
+    val_prod_aqui = pd.read_csv(f"./input_data/pecuaria/valor_producao_aquicultura_{ano}.csv",sep=";",skiprows=4)
     val_prod_aqui = val_prod_aqui.loc[~val_prod_aqui["Carpa"].isna()]
     
     return [prod_pec,val_prod_pec,prod_aqui,val_prod_aqui]
@@ -78,7 +78,7 @@ def transform_data_aquicultura(lista:list[pd.DataFrame]) -> pd.DataFrame:
 
     return aquicultura
 
-def union_data(pecuaria, aquicultura):
+def union_data(pecuaria:pd.DataFrame, aquicultura:pd.DataFrame, ano:int) -> pd.DataFrame:
     df = pd.concat([pecuaria, aquicultura])
 
     produtos = df[["produto"]]
@@ -89,19 +89,35 @@ def union_data(pecuaria, aquicultura):
 
     df = df.merge(produtos, "left", on=["produto"]).drop(columns=["produto"])
 
+    df["ano"] = ano
+
+    df["valor"] =  df["valor"].apply(lambda x: x * 1000)
+
     return df
 
-def save_data(df:pd.DataFrame,tipo:str)->None:
+def union_anos(df21, df22):
+    df = pd.concat([df21, df22])
+    return df
+
+def save_data(df:pd.DataFrame,tipo:str) -> None:
     if tipo == "csv":
-        df.to_csv("./output_data/pecuaria/pec_pecuaria.csv", index=False)
+        df.to_csv("./output_data/pecuaria/pec_pecuaria.csv", index=False, decimal=",")
     if tipo == "parquet":
         df.to_parquet("./output_data/pecuaria/pec_pecuaria.parquet", index=False)
 
 def auto_exec():
-    lista = get_data()
-    pecuaria = transform_data_pecuaria(lista)
-    aquiultura = transform_data_aquicultura(lista)
-    full_df = union_data(pecuaria,aquiultura)
-    save_data(full_df,"csv")
+    lista_22 = get_data("2022")
+    pecuaria_22 = transform_data_pecuaria(lista_22)
+    aquiultura_22 = transform_data_aquicultura(lista_22)
+    df_22 = union_data(pecuaria_22,aquiultura_22,2022)
+
+    lista_21 = get_data("2021")
+    pecuaria_21 = transform_data_pecuaria(lista_21)
+    aquiultura_21 = transform_data_aquicultura(lista_21)
+    df_21 = union_data(pecuaria_21,aquiultura_21,2021)
+
+    final = union_anos(df_21, df_22)
+
+    save_data(final,"parquet")
 
 auto_exec()

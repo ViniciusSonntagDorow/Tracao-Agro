@@ -1,16 +1,15 @@
 import pandas as pd
 
-pd.set_option('display.max_columns', 500)
 pd.set_option('display.max_rows', 500)
 
-def get_data() -> list[pd.DataFrame]:
-    plantada = pd.read_csv("./input_data/agricultura/area_plantada_sul.csv",skiprows=4,sep=";")
-    colhida = pd.read_csv("./input_data/agricultura/area_colhida_sul.csv",skiprows=4,sep=";")
-    qtdproducao = pd.read_csv("./input_data/agricultura/quantidade_produzida_sul.csv",skiprows=4,sep=";")
-    valproducao = pd.read_csv("./input_data/agricultura/valor_producao_sul.csv",skiprows=4,sep=";")
+def get_data(ano:str) -> list[pd.DataFrame]:
+    plantada = pd.read_csv(f"./input_data/agricultura/area_plantada_sul_{ano}.csv",skiprows=4,sep=";")
+    colhida = pd.read_csv(f"./input_data/agricultura/area_colhida_sul_{ano}.csv",skiprows=4,sep=";")
+    qtdproducao = pd.read_csv(f"./input_data/agricultura/quantidade_produzida_sul_{ano}.csv",skiprows=4,sep=";")
+    valproducao = pd.read_csv(f"./input_data/agricultura/valor_producao_sul_{ano}.csv",skiprows=4,sep=";")
     return [plantada, colhida, qtdproducao, valproducao]
 
-def transform_data(lista:list[pd.DataFrame]) -> pd.DataFrame:
+def transform_data(lista:list[pd.DataFrame],ano:int) -> pd.DataFrame:
     plantada = lista[0]
     colhida = lista[1]
     qtdproducao = lista[2]
@@ -67,11 +66,18 @@ def transform_data(lista:list[pd.DataFrame]) -> pd.DataFrame:
 
     agricultura = agricultura.merge(produtos, "left", on=["produto"]).drop(columns=["produto"])
 
+    agricultura["ano"] = ano
+
     for i in ["cod_munibge","area plantada","area colhida","quantidade produzida","valor da producao","cod_produto"]:
         agricultura[i] = agricultura[i].replace({"-":0,"...":0})
         agricultura[i] = agricultura[i].astype("int")
 
     return agricultura
+
+def union_ano(df_2021, df_2022):
+    df = pd.concat([df_2021, df_2022])
+    df["valor da producao"] = df["valor da producao"].apply(lambda x:x*1000)
+    return df
 
 def save_data(df:pd.DataFrame, tipo:str) -> None:
     if tipo == "csv":
@@ -80,8 +86,14 @@ def save_data(df:pd.DataFrame, tipo:str) -> None:
         df.to_parquet("./output_data/agricultura/agri_agriculura.parquet", index=False)
 
 def auto_exec():
-    df = get_data()
-    df_final = transform_data(df)
-    save_data(df_final,"parquet")
+    lista22 = get_data("2022")
+    df22 = transform_data(lista22,2022)
+
+    lista21 = get_data("2021")
+    df21 = transform_data(lista21,2021)
+
+    df_final = union_ano(df21,df22)
+
+    save_data(df_final,"csv")
 
 auto_exec()
