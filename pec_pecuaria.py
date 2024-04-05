@@ -95,8 +95,10 @@ def union_data(pecuaria:pd.DataFrame, aquicultura:pd.DataFrame, ano:int) -> pd.D
 
     return df
 
-def union_anos(df21, df22):
-    df = pd.concat([df21, df22])
+def union_anos(*args):
+    df = pd.DataFrame()
+    for arg in args:
+        df = pd.concat([df,arg])
     return df
 
 def save_data(df:pd.DataFrame,tipo:str) -> None:
@@ -118,6 +120,6 @@ def auto_exec():
 
     final = union_anos(df_21, df_22)
 
-    save_data(final,"parquet")
+    save_data(final,"csv")
 
 auto_exec()

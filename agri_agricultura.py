@@ -74,8 +74,10 @@ def transform_data(lista:list[pd.DataFrame],ano:int) -> pd.DataFrame:
 
     return agricultura
 
-def union_ano(df_2021, df_2022):
-    df = pd.concat([df_2021, df_2022])
+def union_ano(*args):
+    df = pd.DataFrame()
+    for arg in args:
+        df = pd.concat([df,arg])
     df["valor da producao"] = df["valor da producao"].apply(lambda x:x*1000)
     return df
 
@@ -94,6 +96,6 @@ def auto_exec():
 
     df_final = union_ano(df21,df22)
 
-    save_data(df_final,"csv")
+    save_data(df_final,"parquet")
 
 auto_exec()
