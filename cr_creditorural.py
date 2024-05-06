@@ -56,10 +56,10 @@ def save_data(df:pd.DataFrame, tipo:str) -> None:
         df.to_parquet(f"./output_data/creditorural/creditorural.parquet", index=False)
 
 def autoexec() -> None:
-    df = read_data("./input_data/creditorural/SICOR_CONTRATOS_MUNICIPIO.csv", "cp1252", "|")
+    df = read_data("./input_data/creditorural/SICOR_CONTRATOS_MUNICIPIO.csv", "cp1252", ";")
     
     df_final = transform_data(df)
 
-    save_data(df_final, "csv")
+    save_data(df_final, "parquet")
 
 autoexec()
